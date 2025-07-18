@@ -71,6 +71,9 @@ export KONG_PLUGINS=bundled,kong-openid-connect
 | `realm` | string | `"kong"` | Authentication realm |
 | `redirect_uri_path` | string | `"/auth"` | Callback path for OIDC (deprecated) |
 | `redirect_uri` | string | auto-generated | Full callback URI for OIDC |
+| `redirect_uri_scheme` | string | auto-detected | Override scheme for redirect URI (http/https) |
+| `redirect_uri_host` | string | auto-detected | Override hostname for redirect URI |
+| `redirect_uri_port` | number | auto-detected | Override port for redirect URI (omit for 80/443) |
 | `logout_path` | string | `"/logout"` | Logout endpoint path |
 | `timeout` | number | `10000` | HTTP timeout in milliseconds |
 
@@ -127,6 +130,30 @@ curl -X POST http://kong-admin:8001/services/my-service/plugins \
   --data "config.session_storage=redis" \
   --data "config.session_redis_host=127.0.0.1" \
   --data "config.session_redis_port=6379"
+```
+
+### Port Mapping Configuration
+
+When Kong is behind a load balancer or proxy, you may need to override the redirect URI components:
+
+```bash
+# Remove port from redirect URI (for services behind load balancers)
+curl -X POST http://kong-admin:8001/services/my-service/plugins \
+  --data "name=kong-openid-connect" \
+  --data "config.client_id=my-client-id" \
+  --data "config.client_secret=my-client-secret" \
+  --data "config.discovery=https://my-oidc-provider/.well-known/openid-configuration" \
+  --data "config.redirect_uri_host=my-public-domain.com" \
+  --data "config.redirect_uri_scheme=https"
+
+# Custom port mapping
+curl -X POST http://kong-admin:8001/services/my-service/plugins \
+  --data "name=kong-openid-connect" \
+  --data "config.client_id=my-client-id" \
+  --data "config.client_secret=my-client-secret" \
+  --data "config.discovery=https://my-oidc-provider/.well-known/openid-configuration" \
+  --data "config.redirect_uri_host=my-domain.com" \
+  --data "config.redirect_uri_port=8080"
 ```
 
 ## Authentication Flow

@@ -31,14 +31,23 @@ function _M.get_oidc_options(config)
   if config.redirect_uri then
     oidc_opts.redirect_uri = config.redirect_uri
   else
-    -- Build absolute redirect_uri from request headers
-    local scheme = kong.request.get_scheme()
-    local host = kong.request.get_host()
-    local port = kong.request.get_port()
+    -- Build absolute redirect_uri from request headers or config overrides
+    local scheme = config.redirect_uri_scheme or kong.request.get_scheme()
+    local host = config.redirect_uri_host or kong.request.get_host()
+    local port = config.redirect_uri_port or kong.request.get_port()
     local port_str = ""
     
-    if (scheme == "https" and port ~= 443) or (scheme == "http" and port ~= 80) then
-      port_str = ":" .. port
+    -- Handle port mapping logic
+    if config.redirect_uri_port then
+      -- If explicit port is configured, use it
+      if config.redirect_uri_port ~= 443 and config.redirect_uri_port ~= 80 then
+        port_str = ":" .. config.redirect_uri_port
+      end
+    else
+      -- Use auto-detected port with standard port omission
+      if (scheme == "https" and port ~= 443) or (scheme == "http" and port ~= 80) then
+        port_str = ":" .. port
+      end
     end
     
     oidc_opts.redirect_uri = scheme .. "://" .. host .. port_str .. config.redirect_uri_path
