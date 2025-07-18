@@ -1,4 +1,10 @@
-# Kong OIDC Plugin
+# Kong OpenID Connect Plugin 🔐
+
+<div align="center">
+  <h1>🏛️ 🔐 ⚡</h1>
+  <p><strong>Kong API Gateway + OpenID Connect + High Performance</strong></p>
+  <em>Secure your Kong API Gateway with OpenID Connect authentication</em>
+</div>
 
 A Kong plugin for OpenID Connect (OIDC) authentication that provides comprehensive authentication capabilities for Kong API Gateway.
 
@@ -16,7 +22,7 @@ A Kong plugin for OpenID Connect (OIDC) authentication that provides comprehensi
 ### Using LuaRocks
 
 ```bash
-luarocks install kong-oidc
+luarocks install kong-openid-connect
 ```
 
 ### Manual Installation
@@ -36,12 +42,12 @@ luarocks install lua-resty-http
 
 3. Copy plugin files to Kong plugins directory:
 ```bash
-cp -r kong/plugins/kong-oidc /usr/local/share/lua/5.1/kong/plugins/
+cp -r kong/plugins/kong-openid-connect /usr/local/share/lua/5.1/kong/plugins/
 ```
 
 4. Enable the plugin in Kong configuration:
 ```bash
-export KONG_PLUGINS=bundled,kong-oidc
+export KONG_PLUGINS=bundled,kong-openid-connect
 ```
 
 ## Configuration
@@ -90,7 +96,7 @@ export KONG_PLUGINS=bundled,kong-oidc
 
 ```bash
 curl -X POST http://kong-admin:8001/services/my-service/plugins \
-  --data "name=kong-oidc" \
+  --data "name=kong-openid-connect" \
   --data "config.client_id=my-client-id" \
   --data "config.client_secret=my-client-secret" \
   --data "config.discovery=https://my-oidc-provider/.well-known/openid-configuration"
@@ -100,7 +106,7 @@ curl -X POST http://kong-admin:8001/services/my-service/plugins \
 
 ```bash
 curl -X POST http://kong-admin:8001/services/my-api/plugins \
-  --data "name=kong-oidc" \
+  --data "name=kong-openid-connect" \
   --data "config.client_id=my-client-id" \
   --data "config.client_secret=my-client-secret" \
   --data "config.discovery=https://my-oidc-provider/.well-known/openid-configuration" \
@@ -112,7 +118,7 @@ curl -X POST http://kong-admin:8001/services/my-api/plugins \
 
 ```bash
 curl -X POST http://kong-admin:8001/services/my-service/plugins \
-  --data "name=kong-oidc" \
+  --data "name=kong-openid-connect" \
   --data "config.client_id=my-client-id" \
   --data "config.client_secret=my-client-secret" \
   --data "config.discovery=https://my-oidc-provider/.well-known/openid-configuration" \
