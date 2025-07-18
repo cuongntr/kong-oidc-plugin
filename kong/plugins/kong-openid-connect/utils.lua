@@ -3,6 +3,45 @@ local ngx_encode_base64 = ngx.encode_base64
 
 local _M = {}
 
+function _M.get_redirect_uri_components(config)
+  local scheme = config.redirect_uri_scheme
+  local host = config.redirect_uri_host
+  local port = config.redirect_uri_port
+  
+  -- If components are explicitly configured, use them
+  if scheme and host then
+    return scheme, host, port or (scheme == "https" and 443 or 80)
+  end
+  
+  -- Auto-detect load balancer scenario
+  if config.auto_detect_load_balancer then
+    -- Check for X-Forwarded-Proto (load balancer sets this)
+    local forwarded_proto = kong.request.get_header("X-Forwarded-Proto")
+    local forwarded_port = kong.request.get_header("X-Forwarded-Port")
+    local forwarded_host = kong.request.get_header("X-Forwarded-Host")
+    
+    if forwarded_proto then
+      scheme = scheme or forwarded_proto
+      host = host or forwarded_host or kong.request.get_host()
+      
+      -- Handle port logic for load balancers
+      if forwarded_port then
+        port = port or tonumber(forwarded_port)
+      else
+        -- Load balancer scenario: assume standard ports
+        port = port or (scheme == "https" and 443 or 80)
+      end
+      
+      return scheme, host, port
+    end
+  end
+  
+  -- Fallback to Kong's detected values
+  return scheme or kong.request.get_scheme(),
+         host or kong.request.get_host(),
+         port or kong.request.get_port()
+end
+
 function _M.get_oidc_options(config)
   local oidc_opts = {
     client_id = config.client_id,
@@ -32,9 +71,7 @@ function _M.get_oidc_options(config)
     oidc_opts.redirect_uri = config.redirect_uri
   else
     -- Build absolute redirect_uri from request headers or config overrides
-    local scheme = config.redirect_uri_scheme or kong.request.get_scheme()
-    local host = config.redirect_uri_host or kong.request.get_host()
-    local port = config.redirect_uri_port or kong.request.get_port()
+    local scheme, host, port = _M.get_redirect_uri_components(config)
     local port_str = ""
     
     -- Handle port mapping logic

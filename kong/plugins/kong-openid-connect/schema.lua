@@ -43,6 +43,7 @@ return {
           { redirect_uri_scheme = { type = "string" } },
           { redirect_uri_host = { type = "string" } },
           { redirect_uri_port = { type = "number" } },
+          { auto_detect_load_balancer = { type = "boolean", default = true } },
           { post_logout_redirect_uri = { type = "string" } },
           { filters = { type = "array", elements = { type = "string" } } },
           { access_token_header_name = { type = "string", default = "X-Access-Token" } },
