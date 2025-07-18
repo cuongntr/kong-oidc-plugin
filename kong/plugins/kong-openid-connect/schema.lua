@@ -1,0 +1,60 @@
+local typedefs = require "kong.db.schema.typedefs"
+
+return {
+  name = "kong-openid-connect",
+  fields = {
+    { consumer = typedefs.no_consumer },
+    { protocols = typedefs.protocols_http },
+    { config = {
+        type = "record",
+        fields = {
+          { client_id = { type = "string", required = true } },
+          { client_secret = { type = "string", required = true } },
+          { discovery = { type = "string", required = true } },
+          { scope = { type = "string", default = "openid" } },
+          { response_type = { type = "string", default = "code" } },
+          { ssl_verify = { type = "boolean", default = false } },
+          { token_endpoint_auth_method = { type = "string", default = "client_secret_post" } },
+          { session_secret = { type = "string" } },
+          { session_cookie_name = { type = "string", default = "session" } },
+          { session_cookie_lifetime = { type = "number", default = 3600 } },
+          { session_cookie_renew = { type = "number", default = 600 } },
+          { session_cookie_path = { type = "string", default = "/" } },
+          { session_cookie_domain = { type = "string" } },
+          { session_cookie_samesite = { type = "string", default = "Lax", one_of = { "Strict", "Lax", "None" } } },
+          { session_cookie_httponly = { type = "boolean", default = true } },
+          { session_cookie_secure = { type = "boolean", default = false } },
+          { session_storage = { type = "string", default = "cookie", one_of = { "cookie", "memcache", "redis", "shm" } } },
+          { session_memcache_prefix = { type = "string", default = "sessions" } },
+          { session_memcache_socket = { type = "string", default = "127.0.0.1:11211" } },
+          { session_redis_prefix = { type = "string", default = "sessions" } },
+          { session_redis_host = { type = "string", default = "127.0.0.1" } },
+          { session_redis_port = { type = "number", default = 6379 } },
+          { session_redis_auth = { type = "string" } },
+          { session_shm_store = { type = "string", default = "sessions" } },
+          { logout_path = { type = "string", default = "/logout" } },
+          { logout_redirect_uri = { type = "string" } },
+          { introspection_endpoint = { type = "string" } },
+          { introspection_endpoint_auth_method = { type = "string", default = "client_secret_basic" } },
+          { bearer_only = { type = "boolean", default = false } },
+          { realm = { type = "string", default = "kong" } },
+          { redirect_uri_path = { type = "string", default = "/auth" } },
+          { post_logout_redirect_uri = { type = "string" } },
+          { filters = { type = "array", elements = { type = "string" } } },
+          { access_token_header_name = { type = "string", default = "X-Access-Token" } },
+          { id_token_header_name = { type = "string", default = "X-Id-Token" } },
+          { user_info_header_name = { type = "string", default = "X-Userinfo" } },
+          { timeout = { type = "number", default = 10000 } },
+          { http_version = { type = "number", default = 1.1 } },
+          { keepalive = { type = "boolean", default = true } },
+          { verify_nonce = { type = "boolean", default = true } },
+          { verify_signature = { type = "boolean", default = true } },
+          { use_jwks = { type = "boolean", default = true } },
+          { recovery_page_path = { type = "string" } },
+          { authorization_params = { type = "map", keys = { type = "string" }, values = { type = "string" } } },
+          { extra_jwks_uris = { type = "array", elements = { type = "string" } } },
+        }
+      }
+    }
+  }
+}
