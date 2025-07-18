@@ -6,7 +6,7 @@ local pluginName = "kong-openid-connect"
 supported_platforms = {"linux", "macosx"}
 
 source = {
-  url = "git+https://github.com/cuongnt/kong-openid-connect-plugin.git",
+  url = "git+https://github.com/cuongntr/kong-openid-connect-plugin.git",
   tag = "v1.0.0"
 }
 
@@ -17,7 +17,7 @@ description = {
     It supports the Authorization Code flow, token introspection, session management,
     and flexible configuration options for various OIDC providers.
   ]],
-  homepage = "https://github.com/cuongnt/kong-openid-connect-plugin",
+  homepage = "https://github.com/cuongntr/kong-openid-connect-plugin",
   license = "MIT"
 }
 

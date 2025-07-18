@@ -23,7 +23,7 @@ luarocks install kong-oidc
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/cuongnt/kong-openid-connect-plugin.git
+git clone https://github.com/cuongntr/kong-openid-connect-plugin.git
 cd kong-openid-connect-plugin
 ```
 
@@ -184,7 +184,7 @@ MIT License - see LICENSE file for details.
 ## Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/cuongnt/kong-openid-connect-plugin/issues
+- GitHub Issues: https://github.com/cuongntr/kong-openid-connect-plugin/issues
 - Kong Community: https://discuss.konghq.com/
 
 ## Changelog
