@@ -16,6 +16,7 @@ A Kong plugin for OpenID Connect (OIDC) authentication that provides comprehensi
 - **Header Injection**: Automatically adds authentication headers to upstream requests
 - **Bearer-Only Mode**: Support for API-only authentication without redirects
 - **Logout Handling**: Built-in logout functionality with configurable redirects
+- **Group-Based Authorization**: Restrict access to users in specific groups (v1.1.0+)
 
 ## Installation
 
@@ -77,6 +78,18 @@ export KONG_PLUGINS=bundled,kong-openid-connect
 | `auto_detect_load_balancer` | boolean | `true` | Auto-detect load balancer using X-Forwarded headers |
 | `logout_path` | string | `"/logout"` | Logout endpoint path |
 | `timeout` | number | `10000` | HTTP timeout in milliseconds |
+
+### Group Authorization Configuration (v1.1.0+)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `enable_group_authorization` | boolean | `false` | Enable group-based access control |
+| `allowed_groups` | array | `[]` | List of groups allowed to access the resource |
+| `group_claim_name` | string | `"groups"` | Name of the claim containing user groups |
+| `group_claim_sources` | array | `["userinfo", "id_token", "access_token"]` | Sources to extract groups from |
+| `group_claim_nested_key` | string | `nil` | Nested key for group claims (e.g., "roles") |
+| `group_authorization_error_message` | string | `"Access denied: insufficient group permissions"` | Custom error message |
+| `group_authorization_error_code` | number | `403` | HTTP status code for group authorization failures |
 
 ### Session Configuration
 
@@ -178,6 +191,50 @@ curl -X POST http://kong-admin:8001/services/my-service/plugins \
   --data "config.redirect_uri_port=8080"
 ```
 
+### Group-Based Authorization (v1.1.0+)
+
+**Restrict access to specific user groups:**
+
+```bash
+# Basic group authorization
+curl -X POST http://kong-admin:8001/services/my-service/plugins \
+  --data "name=kong-openid-connect" \
+  --data "config.client_id=my-client-id" \
+  --data "config.client_secret=my-client-secret" \
+  --data "config.discovery=https://my-oidc-provider/.well-known/openid-configuration" \
+  --data "config.enable_group_authorization=true" \
+  --data "config.allowed_groups[]=admin" \
+  --data "config.allowed_groups[]=developers"
+
+# Keycloak realm roles (nested groups)
+curl -X POST http://kong-admin:8001/services/my-service/plugins \
+  --data "name=kong-openid-connect" \
+  --data "config.client_id=my-client-id" \
+  --data "config.client_secret=my-client-secret" \
+  --data "config.discovery=https://my-keycloak/.well-known/openid-configuration" \
+  --data "config.enable_group_authorization=true" \
+  --data "config.allowed_groups[]=admin" \
+  --data "config.allowed_groups[]=manager" \
+  --data "config.group_claim_name=realm_access" \
+  --data "config.group_claim_nested_key=roles"
+
+# Custom error message and status code
+curl -X POST http://kong-admin:8001/services/my-service/plugins \
+  --data "name=kong-openid-connect" \
+  --data "config.enable_group_authorization=true" \
+  --data "config.allowed_groups[]=premium_users" \
+  --data "config.group_authorization_error_message=Premium subscription required" \
+  --data "config.group_authorization_error_code=402"
+
+# Groups from access token only (for API-only scenarios)
+curl -X POST http://kong-admin:8001/services/my-api/plugins \
+  --data "name=kong-openid-connect" \
+  --data "config.bearer_only=true" \
+  --data "config.enable_group_authorization=true" \
+  --data "config.allowed_groups[]=api_users" \
+  --data "config.group_claim_sources[]=access_token"
+```
+
 ## Authentication Flow
 
 ### Authorization Code Flow
@@ -196,6 +253,54 @@ curl -X POST http://kong-admin:8001/services/my-service/plugins \
 2. Plugin validates token via introspection endpoint
 3. If valid, request proceeds to upstream service
 4. Plugin adds user information headers to upstream request
+
+### Group Authorization Flow (v1.1.0+)
+
+1. **User Authentication**: User successfully authenticates via OIDC
+2. **Group Extraction**: Plugin extracts user groups from configured sources:
+   - **Userinfo Endpoint**: Most reliable, requires API call
+   - **ID Token Claims**: Faster, embedded in JWT token
+   - **Access Token Claims**: For API-only scenarios
+3. **Group Validation**: Plugin checks if user belongs to any allowed group
+4. **Authorization Decision**: 
+   - ✅ **Allow**: User has required group membership
+   - ❌ **Deny**: Return 403 Forbidden (or custom error)
+
+## Group Sources Support
+
+### Userinfo Endpoint (`/userinfo`)
+```json
+{
+  "sub": "user123",
+  "name": "John Doe",
+  "groups": ["admin", "developers"]
+}
+```
+
+### ID Token Claims
+```json
+{
+  "sub": "user123",
+  "groups": ["admin", "developers"],
+  "realm_access": {
+    "roles": ["admin", "manager"]
+  }
+}
+```
+
+### Access Token Claims (JWT)
+```json
+{
+  "sub": "user123",
+  "scope": "openid profile",
+  "groups": ["api_users"],
+  "resource_access": {
+    "my-app": {
+      "roles": ["admin"]
+    }
+  }
+}
+```
 
 ## Upstream Headers
 
@@ -247,6 +352,15 @@ For issues and questions:
 - Kong Community: https://discuss.konghq.com/
 
 ## Changelog
+
+### v1.1.0
+- **Group-Based Authorization**: Restrict access to users in specific groups
+- **Multi-Source Group Extraction**: Extract groups from userinfo, ID tokens, or access tokens
+- **Nested Group Claims**: Support for complex group structures (e.g., Keycloak realm roles)
+- **Configurable Error Handling**: Custom error messages and HTTP status codes
+- **Bearer Token Group Authorization**: Group validation for API-only scenarios
+- **JWT Token Parsing**: Built-in JWT payload decoding for group extraction
+- **Flexible Group Sources**: Configure priority and sources for group extraction
 
 ### v1.0.0
 - Initial release

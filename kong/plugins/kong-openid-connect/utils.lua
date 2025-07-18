@@ -225,4 +225,138 @@ function _M.introspect_access_token(config, token)
   return token_info, nil
 end
 
+function _M.extract_user_groups(user_data, config)
+  if not config.enable_group_authorization then
+    return {}
+  end
+  
+  local groups = {}
+  
+  -- Try to extract groups from configured sources
+  for _, source in ipairs(config.group_claim_sources) do
+    local source_groups = {}
+    
+    if source == "userinfo" and user_data.user then
+      source_groups = _M.get_groups_from_claims(user_data.user, config)
+    elseif source == "id_token" and user_data.id_token then
+      local id_token_claims = _M.decode_jwt_payload(user_data.id_token)
+      if id_token_claims then
+        source_groups = _M.get_groups_from_claims(id_token_claims, config)
+      end
+    elseif source == "access_token" and user_data.access_token then
+      local access_token_claims = _M.decode_jwt_payload(user_data.access_token)
+      if access_token_claims then
+        source_groups = _M.get_groups_from_claims(access_token_claims, config)
+      end
+    end
+    
+    -- Merge groups from this source
+    for _, group in ipairs(source_groups) do
+      if not _M.table_contains(groups, group) then
+        table.insert(groups, group)
+      end
+    end
+  end
+  
+  return groups
+end
+
+function _M.get_groups_from_claims(claims, config)
+  if not claims then
+    return {}
+  end
+  
+  local groups = {}
+  local group_claim = claims[config.group_claim_name]
+  
+  -- Handle nested group claims (e.g., "realm_access.roles")
+  if config.group_claim_nested_key and group_claim then
+    group_claim = group_claim[config.group_claim_nested_key]
+  end
+  
+  if group_claim then
+    if type(group_claim) == "table" then
+      groups = group_claim
+    elseif type(group_claim) == "string" then
+      -- Handle comma-separated groups
+      for group in string.gmatch(group_claim, "([^,]+)") do
+        table.insert(groups, group:match("^%s*(.-)%s*$")) -- trim whitespace
+      end
+    end
+  end
+  
+  return groups
+end
+
+function _M.decode_jwt_payload(token)
+  if not token then
+    return nil
+  end
+  
+  -- Split JWT token (header.payload.signature)
+  local parts = {}
+  for part in string.gmatch(token, "([^.]+)") do
+    table.insert(parts, part)
+  end
+  
+  if #parts < 2 then
+    return nil
+  end
+  
+  -- Decode base64 payload
+  local payload = parts[2]
+  -- Add padding if needed
+  local padding = 4 - (#payload % 4)
+  if padding ~= 4 then
+    payload = payload .. string.rep("=", padding)
+  end
+  
+  local ok, decoded = pcall(function()
+    return cjson.decode(ngx.decode_base64(payload))
+  end)
+  
+  if ok then
+    return decoded
+  else
+    return nil
+  end
+end
+
+function _M.table_contains(table, value)
+  for _, v in ipairs(table) do
+    if v == value then
+      return true
+    end
+  end
+  return false
+end
+
+function _M.check_group_authorization(user_groups, config)
+  if not config.enable_group_authorization then
+    return true, nil
+  end
+  
+  if not config.allowed_groups or #config.allowed_groups == 0 then
+    kong.log.warn("Group authorization enabled but no allowed groups configured")
+    return true, nil
+  end
+  
+  -- Check if user has any of the allowed groups
+  for _, user_group in ipairs(user_groups) do
+    if _M.table_contains(config.allowed_groups, user_group) then
+      kong.log.info("User authorized with group: " .. user_group)
+      return true, nil
+    end
+  end
+  
+  local error_msg = config.group_authorization_error_message or "Access denied: insufficient group permissions"
+  kong.log.warn("Group authorization failed. User groups: " .. table.concat(user_groups, ", ") .. 
+                 ". Required groups: " .. table.concat(config.allowed_groups, ", "))
+  
+  return false, {
+    status = config.group_authorization_error_code or 403,
+    message = error_msg
+  }
+end
+
 return _M

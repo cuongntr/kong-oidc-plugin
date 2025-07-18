@@ -58,6 +58,13 @@ return {
           { recovery_page_path = { type = "string" } },
           { authorization_params = { type = "map", keys = { type = "string" }, values = { type = "string" } } },
           { extra_jwks_uris = { type = "array", elements = { type = "string" } } },
+          { enable_group_authorization = { type = "boolean", default = false } },
+          { allowed_groups = { type = "array", elements = { type = "string" } } },
+          { group_claim_name = { type = "string", default = "groups" } },
+          { group_claim_sources = { type = "array", elements = { type = "string" }, default = {"userinfo", "id_token", "access_token"} } },
+          { group_claim_nested_key = { type = "string" } },
+          { group_authorization_error_message = { type = "string", default = "Access denied: insufficient group permissions" } },
+          { group_authorization_error_code = { type = "number", default = 403 } },
         }
       }
     }

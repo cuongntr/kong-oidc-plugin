@@ -2,7 +2,7 @@ local utils = require "kong.plugins.kong-openid-connect.utils"
 
 local OpenIdConnectHandler = {
   PRIORITY = 1000,
-  VERSION = "1.0.0",
+  VERSION = "1.1.0",
 }
 
 function OpenIdConnectHandler:access(config)
@@ -25,7 +25,19 @@ function OpenIdConnectHandler:access(config)
           kong.log.err("Token introspection failed: " .. (err or "token inactive"))
           return kong.response.exit(401, { message = "Unauthorized" })
         end
-        utils.set_authentication_context({ user = token_info }, config)
+        local user_data = { user = token_info, access_token = token }
+        
+        -- Extract user groups from token introspection result
+        local user_groups = utils.extract_user_groups(user_data, config)
+        
+        -- Check group authorization
+        local authorized, auth_error = utils.check_group_authorization(user_groups, config)
+        if not authorized then
+          kong.log.err("Group authorization failed for bearer token user")
+          return kong.response.exit(auth_error.status, { message = auth_error.message })
+        end
+        
+        utils.set_authentication_context(user_data, config)
         return
       else
         kong.log.warn("Bearer token provided but no introspection endpoint configured")
@@ -58,6 +70,16 @@ function OpenIdConnectHandler:access(config)
   end
 
   if res then
+    -- Extract user groups from various sources
+    local user_groups = utils.extract_user_groups(res, config)
+    
+    -- Check group authorization
+    local authorized, auth_error = utils.check_group_authorization(user_groups, config)
+    if not authorized then
+      kong.log.err("Group authorization failed for user")
+      return kong.response.exit(auth_error.status, { message = auth_error.message })
+    end
+    
     utils.set_authentication_context(res, config)
     utils.add_headers(res, config)
   end
