@@ -239,14 +239,22 @@ function _M.extract_user_groups(user_data, config)
     if source == "userinfo" and user_data.user then
       source_groups = _M.get_groups_from_claims(user_data.user, config)
     elseif source == "id_token" and user_data.id_token then
-      local id_token_claims = _M.decode_jwt_payload(user_data.id_token)
-      if id_token_claims then
-        source_groups = _M.get_groups_from_claims(id_token_claims, config)
+      if type(user_data.id_token) == "string" then
+        local id_token_claims = _M.decode_jwt_payload(user_data.id_token)
+        if id_token_claims then
+          source_groups = _M.get_groups_from_claims(id_token_claims, config)
+        end
+      else
+        kong.log.warn("id_token is not a string, type: " .. type(user_data.id_token))
       end
     elseif source == "access_token" and user_data.access_token then
-      local access_token_claims = _M.decode_jwt_payload(user_data.access_token)
-      if access_token_claims then
-        source_groups = _M.get_groups_from_claims(access_token_claims, config)
+      if type(user_data.access_token) == "string" then
+        local access_token_claims = _M.decode_jwt_payload(user_data.access_token)
+        if access_token_claims then
+          source_groups = _M.get_groups_from_claims(access_token_claims, config)
+        end
+      else
+        kong.log.warn("access_token is not a string, type: " .. type(user_data.access_token))
       end
     end
     
@@ -290,6 +298,11 @@ end
 
 function _M.decode_jwt_payload(token)
   if not token then
+    return nil
+  end
+  
+  if type(token) ~= "string" then
+    kong.log.warn("Expected string token but got " .. type(token))
     return nil
   end
   
