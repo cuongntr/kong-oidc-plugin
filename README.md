@@ -69,7 +69,8 @@ export KONG_PLUGINS=bundled,kong-openid-connect
 | `ssl_verify` | boolean | `false` | Verify SSL certificates |
 | `bearer_only` | boolean | `false` | API-only mode without redirects |
 | `realm` | string | `"kong"` | Authentication realm |
-| `redirect_uri_path` | string | `"/auth"` | Callback path for OIDC |
+| `redirect_uri_path` | string | `"/auth"` | Callback path for OIDC (deprecated) |
+| `redirect_uri` | string | auto-generated | Full callback URI for OIDC |
 | `logout_path` | string | `"/logout"` | Logout endpoint path |
 | `timeout` | number | `10000` | HTTP timeout in milliseconds |
 
@@ -99,7 +100,8 @@ curl -X POST http://kong-admin:8001/services/my-service/plugins \
   --data "name=kong-openid-connect" \
   --data "config.client_id=my-client-id" \
   --data "config.client_secret=my-client-secret" \
-  --data "config.discovery=https://my-oidc-provider/.well-known/openid-configuration"
+  --data "config.discovery=https://my-oidc-provider/.well-known/openid-configuration" \
+  --data "config.redirect_uri=https://my-domain.com/auth"
 ```
 
 ### Bearer Token Only Mode

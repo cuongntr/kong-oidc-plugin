@@ -12,7 +12,6 @@ function _M.get_oidc_options(config)
     response_type = config.response_type,
     ssl_verify = config.ssl_verify,
     token_endpoint_auth_method = config.token_endpoint_auth_method,
-    redirect_uri_path = config.redirect_uri_path,
     logout_path = config.logout_path,
     post_logout_redirect_uri = config.post_logout_redirect_uri,
     timeout = config.timeout,
@@ -27,6 +26,23 @@ function _M.get_oidc_options(config)
     authorization_params = config.authorization_params,
     extra_jwks_uris = config.extra_jwks_uris,
   }
+
+  -- Use new redirect_uri if provided, otherwise build from redirect_uri_path
+  if config.redirect_uri then
+    oidc_opts.redirect_uri = config.redirect_uri
+  else
+    -- Build absolute redirect_uri from request headers
+    local scheme = kong.request.get_scheme()
+    local host = kong.request.get_host()
+    local port = kong.request.get_port()
+    local port_str = ""
+    
+    if (scheme == "https" and port ~= 443) or (scheme == "http" and port ~= 80) then
+      port_str = ":" .. port
+    end
+    
+    oidc_opts.redirect_uri = scheme .. "://" .. host .. port_str .. config.redirect_uri_path
+  end
 
   if config.filters then
     oidc_opts.filters = config.filters
@@ -81,21 +97,17 @@ function _M.set_authentication_context(user, config)
 end
 
 function _M.add_headers(user, config)
-  local headers = kong.service.request.get_headers()
-  
   if user.access_token then
-    headers[config.access_token_header_name] = ngx_encode_base64(user.access_token)
+    kong.service.request.set_header(config.access_token_header_name, ngx_encode_base64(user.access_token))
   end
   
   if user.id_token then
-    headers[config.id_token_header_name] = ngx_encode_base64(user.id_token)
+    kong.service.request.set_header(config.id_token_header_name, ngx_encode_base64(user.id_token))
   end
   
   if user.user then
-    headers[config.user_info_header_name] = ngx_encode_base64(cjson.encode(user.user))
+    kong.service.request.set_header(config.user_info_header_name, ngx_encode_base64(cjson.encode(user.user)))
   end
-  
-  kong.service.request.set_headers(headers)
 end
 
 function _M.handle_logout(config)

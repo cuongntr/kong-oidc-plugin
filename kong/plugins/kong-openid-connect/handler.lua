@@ -6,6 +6,12 @@ local OpenIdConnectHandler = {
 }
 
 function OpenIdConnectHandler:access(config)
+  -- Skip authentication for favicon and other static assets
+  local uri = kong.request.get_path()
+  if uri == "/favicon.ico" or uri:match("^/static/") or uri:match("%.css$") or uri:match("%.js$") or uri:match("%.png$") or uri:match("%.jpg$") or uri:match("%.gif$") then
+    return
+  end
+  
   if utils.is_logout_request(config) then
     return utils.handle_logout(config)
   end
@@ -40,7 +46,7 @@ function OpenIdConnectHandler:access(config)
   local session_opts = utils.get_session_options(config)
   local oidc_opts = utils.get_oidc_options(config)
   
-  local res, err = oidc.authenticate(oidc_opts, config.redirect_uri_path, nil, session_opts)
+  local res, err = oidc.authenticate(oidc_opts, nil, nil, session_opts)
   
   if err then
     if config.bearer_only then
