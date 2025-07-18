@@ -165,9 +165,11 @@ To logout a user, direct them to the configured logout path (default: `/logout`)
 
 ## Compatibility
 
-- Kong >= 2.0
+- Kong >= 3.0 (uses modern plugin structure, no BasePlugin dependency)
 - OpenResty >= 1.15.8.1
 - Lua >= 5.1
+
+**Note**: This plugin is specifically designed for Kong 3.0+ and does not use the deprecated `BasePlugin` class.
 
 ## Contributing
 

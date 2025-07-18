@@ -1,18 +1,11 @@
-local BasePlugin = require "kong.plugins.base_plugin"
 local utils = require "kong.plugins.kong-openid-connect.utils"
 
-local OpenIdConnectHandler = BasePlugin:extend()
-
-OpenIdConnectHandler.PRIORITY = 1000
-OpenIdConnectHandler.VERSION = "1.0.0"
-
-function OpenIdConnectHandler:new()
-  OpenIdConnectHandler.super.new(self, "kong-openid-connect")
-end
+local OpenIdConnectHandler = {
+  PRIORITY = 1000,
+  VERSION = "1.0.0",
+}
 
 function OpenIdConnectHandler:access(config)
-  OpenIdConnectHandler.super.access(self)
-  
   if utils.is_logout_request(config) then
     return utils.handle_logout(config)
   end
@@ -62,18 +55,6 @@ function OpenIdConnectHandler:access(config)
     utils.set_authentication_context(res, config)
     utils.add_headers(res, config)
   end
-end
-
-function OpenIdConnectHandler:header_filter(config)
-  OpenIdConnectHandler.super.header_filter(self)
-end
-
-function OpenIdConnectHandler:body_filter(config)
-  OpenIdConnectHandler.super.body_filter(self)
-end
-
-function OpenIdConnectHandler:log(config)
-  OpenIdConnectHandler.super.log(self)
 end
 
 return OpenIdConnectHandler

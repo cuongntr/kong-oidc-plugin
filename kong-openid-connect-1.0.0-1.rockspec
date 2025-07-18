@@ -11,11 +11,12 @@ source = {
 }
 
 description = {
-  summary = "A Kong plugin for OpenID Connect authentication",
+  summary = "A Kong plugin for OpenID Connect authentication (Kong 3.0+ compatible)",
   detailed = [[
     This plugin provides OpenID Connect (OIDC) authentication capabilities for Kong API Gateway.
     It supports the Authorization Code flow, token introspection, session management,
     and flexible configuration options for various OIDC providers.
+    Compatible with Kong 3.0+ (no BasePlugin dependency).
   ]],
   homepage = "https://github.com/cuongntr/kong-openid-connect-plugin",
   license = "MIT"
